@@ -1,0 +1,22 @@
+
+#pragma kernel CSRTTest
+
+#define threadCount 8 
+RWTexture2D<float2> _output;    // RenderTexture RW 참조
+
+
+[numthreads(threadCount, threadCount, 1)]   // 한번에 처리할 쓰레드
+void CSRTTest   (uint3 groupID           : SV_GroupID, 
+                 uint groupIndex         : SV_GroupIndex, 
+                 uint3 groupThreadID     : SV_GroupThreadID, 
+                 uint3 dispatchThreadId  : SV_DispatchThreadID)
+{
+    uint width, height;
+    _output.GetDimensions(width, height);   // RWTexture2D의 크기 참조
+   
+    // uint3 threadID = dispatchThreadId;
+    uint3 threadID = groupID * threadCount + groupThreadID;
+    float2 uv = threadID.xy / float2(width, height); // 스크린 픽셀 좌표를 0 ~ 1 값으로 변환
+    _output[threadID.xy] = uv;  // 렌더 텍스처에 값 입력
+}
+

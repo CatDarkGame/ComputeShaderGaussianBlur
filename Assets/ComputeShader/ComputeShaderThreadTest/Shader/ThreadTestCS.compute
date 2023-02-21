@@ -1,0 +1,29 @@
+#pragma kernel CSRTTest
+
+#define threadCountX 256  // 256 // 1024
+#define threadCountY 2  // 256 // 1024
+
+RWTexture2D<float4> _output;
+
+[numthreads(threadCountX,threadCountY,1)]
+void CSRTTest (uint3 groupID           : SV_GroupID, 
+                 uint groupIndex         : SV_GroupIndex, 
+                 uint3 groupThreadID     : SV_GroupThreadID, 
+                 uint3 dispatchThreadId  : SV_DispatchThreadID)
+{
+    uint width, height = 0;
+    _output.GetDimensions(width, height);
+
+    uint2 currentThreadID = 0;//dispatchThreadId.xy;
+    //currentThreadID = dispatchThreadId.xy;
+    currentThreadID.x = groupID.x * threadCountX + groupThreadID.x;
+    currentThreadID.y = groupID.y * threadCountY + groupThreadID.y;
+    
+    float2 uv = currentThreadID.xy / float2(width, height);
+    _output[currentThreadID.xy] = float4(uv, 0, 1);
+    
+     _output[currentThreadID.xy] =0.5f;
+     if(currentThreadID.y<512)   _output[currentThreadID.xy] =0.0f;
+    //if(dispatchThreadId.x < 512)  _output[currentThreadID.xy] = 0;
+}
+

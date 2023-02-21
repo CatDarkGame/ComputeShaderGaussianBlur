@@ -1,0 +1,54 @@
+#pragma kernel CSBlurHorizontal
+#pragma kernel CSBlurVertical
+
+#define threadCount 1024 
+
+Texture2D<float3> Source;
+RWTexture2D<float3> Output_Horizontal;
+RWTexture2D<float3> Output_Vertical;
+
+StructuredBuffer<unorm float> Weights;
+int blurRadius;
+
+
+
+[numthreads(threadCount,1,1)]
+void CSBlurHorizontal   (uint3 groupID           : SV_GroupID, 
+                         uint groupIndex         : SV_GroupIndex, 
+                         uint3 groupThreadID     : SV_GroupThreadID, 
+                         uint3 dispatchThreadId  : SV_DispatchThreadID)
+{
+    uint2 uv = dispatchThreadId.xy;
+   
+    float3 col = 0;
+    uint index = 0;
+    int loopCount = (blurRadius - 1) * 0.5f;
+    for (int j = -loopCount; j <= blurRadius; j++) 
+    {
+        int offset = j * 2;   
+        col +=  Source[uv + int2(offset, 0.0f)] * Weights[index];
+        index++;
+    }
+    Output_Horizontal[dispatchThreadId.xy] = col;
+}
+
+
+[numthreads(1,threadCount,1)]
+void CSBlurVertical     (uint3 groupID           : SV_GroupID, 
+                         uint groupIndex         : SV_GroupIndex, 
+                         uint3 groupThreadID     : SV_GroupThreadID, 
+                         uint3 dispatchThreadId  : SV_DispatchThreadID)
+{
+    uint2 uv = dispatchThreadId.xy;
+   
+    float3 col = 0;
+    uint index = 0;
+    int loopCount = (blurRadius - 1) * 0.5f;
+    for (int j = -loopCount; j <= blurRadius; j++) 
+    {
+        int offset = j * 2;   
+        col +=  Source[uv + int2(0, offset)] * Weights[index];
+        index++;
+    }
+    Output_Vertical[dispatchThreadId.xy] = col;
+}
