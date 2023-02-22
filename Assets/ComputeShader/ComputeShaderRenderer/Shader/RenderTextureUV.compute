@@ -20,3 +20,11 @@ void CSRTTest   (uint3 groupID           : SV_GroupID,
     _output[threadID.xy] = uv;  // 렌더 텍스처에 값 입력
 }
 
+
+
+/*
+ uint width, height;
+    Source.GetDimensions(width, height);   // RWTexture2D의 크기 참조
+    uint clamedDisX = min(dispatchThreadId.x, width - 1);  // 소스 텍스처 최대 값 -1 / 1023
+    uint clamedDisY = min(dispatchThreadId.y, height - 1);
+*/

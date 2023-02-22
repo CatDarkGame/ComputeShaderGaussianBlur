@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6d8d38d9232a4d746951c7a5ff39a257, type: 3}
   m_Name: CSGaussianBlurRenderFeature
   m_EditorClassIdentifier: 
-  m_Active: 1
+  m_Active: 0
   passEvent: 550
   computeShader: {fileID: 7200000, guid: ca20b5412d92ac342b46278c885ad55a, type: 3}
   blurStep: 8
@@ -129,6 +129,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1c27d3dd7484e834db13678cf3fc1e4d, type: 3}
   m_Name: GaussianblurRenderFeature
   m_EditorClassIdentifier: 
-  m_Active: 1
+  m_Active: 0
   passEvent: 550
-  blurStep: 8
+  blurStep: 1

@@ -11,7 +11,7 @@ public class CSGaussianBlurRenderPass : ScriptableRenderPass
     private static readonly int PROPERTY_TEMPBUFFER_1 = Shader.PropertyToID("_CSGaussianBlurRenderPassTempBuffer_1");
     private static readonly int PROPERTY_TEMPBUFFER_2 = Shader.PropertyToID("_CSGaussianBlurRenderPassTempBuffer_2");
 
-    private static readonly int ThreadCount = 1024;
+    private static readonly int ThreadCount = 256;
     private static readonly int BlurRadius = 9;
     private static readonly float[] BlurWeight = new float[9]
                                   { 0.01621622f, 0.05405405f, 0.12162162f,
@@ -83,6 +83,9 @@ public class CSGaussianBlurRenderPass : ScriptableRenderPass
         int threadGroupsX = Mathf.CeilToInt((float)descriptor.width / (float)ThreadCount);
         int threadGroupsY = Mathf.CeilToInt((float)descriptor.height / (float)ThreadCount);
 
+        int threadGroupsX2 = Mathf.CeilToInt((float)descriptor.height / (float)32);
+        int threadGroupsY2 = Mathf.CeilToInt((float)descriptor.height / (float)ThreadCount);
+
         cmd.SetComputeTextureParam(_computeShader, _kernelIndex_Horizontal, "Source", _destination);
         cmd.SetComputeTextureParam(_computeShader, _kernelIndex_Horizontal, "Output_Horizontal", _tempBuffer_1);
 
@@ -93,7 +96,7 @@ public class CSGaussianBlurRenderPass : ScriptableRenderPass
         cmd.DispatchCompute(_computeShader, _kernelIndex_Vertical, descriptor.width, threadGroupsY, 1);
 
 
-        for(int i=0;i< _blurStep; i++)
+        for(int i=1; i < _blurStep; i++)
         {
             cmd.SetComputeTextureParam(_computeShader, _kernelIndex_Horizontal, "Source", _tempBuffer_2);
             cmd.SetComputeTextureParam(_computeShader, _kernelIndex_Horizontal, "Output_Horizontal", _tempBuffer_1);
