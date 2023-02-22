@@ -11,7 +11,7 @@ public class CSGaussianBlurRenderPass : ScriptableRenderPass
     private static readonly int PROPERTY_TEMPBUFFER_1 = Shader.PropertyToID("_CSGaussianBlurRenderPassTempBuffer_1");
     private static readonly int PROPERTY_TEMPBUFFER_2 = Shader.PropertyToID("_CSGaussianBlurRenderPassTempBuffer_2");
 
-    private static readonly int ThreadCount = 256;
+    private static readonly int ThreadCount = 8;
     private static readonly int BlurRadius = 9;
     private static readonly float[] BlurWeight = new float[9]
                                   { 0.01621622f, 0.05405405f, 0.12162162f,

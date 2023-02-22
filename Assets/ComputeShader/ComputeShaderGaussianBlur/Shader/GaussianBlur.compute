@@ -1,7 +1,7 @@
 #pragma kernel CSBlurHorizontal
 #pragma kernel CSBlurVertical
 
-#define threadCount 256 
+#define threadCount 9 
 #define Radius 9
 
 Texture2D<float3> Source;
@@ -11,7 +11,7 @@ RWTexture2D<float3> Output_Vertical;
 StructuredBuffer<unorm float> Weights;
 int blurRadius;
 
-#define CacheSize (threadCount + 2 * Radius)
+#define CacheSize (threadCount + Radius)
 groupshared float3 gCache[CacheSize];
 
 
@@ -24,8 +24,64 @@ void CSBlurHorizontal   (uint3 groupID           : SV_GroupID,
     uint2 uv = dispatchThreadId.xy;
     uint2 sourceSize;
     Source.GetDimensions(sourceSize.x, sourceSize.y);
-    
+   
+    int loopCount = (blurRadius - 1) * 0.5f;
+    int2 sourceUV = dispatchThreadId.xy;
+    sourceUV.x = min(sourceUV.x, sourceSize.x -1);
+    sourceUV.y = min(sourceUV.y, sourceSize.y -1);
+    gCache[groupThreadID.x + loopCount] = Source[sourceUV];
+    if (groupThreadID.x < (uint)loopCount) 
+    {
+        sourceUV.x = max(sourceUV.x - loopCount, 0);    
+        gCache[groupThreadID.x] = Source[sourceUV]; 
+    }
+    else if (groupThreadID.x >= threadCount - (uint)loopCount) 
+    {
+        sourceUV.x = min(sourceUV.x + loopCount, sourceSize.x - 1); 
+        gCache[groupThreadID.x + 2 * loopCount] = Source[sourceUV];
+    }
+
+    GroupMemoryBarrierWithGroupSync();  // Wait for all thraed end of line upper code
+
+    float3 col = 0.0f;
+
+    [unroll(9)]
+    for (int i = 0; i < 9; i++)
+    {
+        col += gCache[groupThreadID.x + i] * Weights[i];
+    }
+    Output_Horizontal[uint2(dispatchThreadId.x, dispatchThreadId.y)] = col;
+}
+
+
+[numthreads(1,threadCount,1)]
+void CSBlurVertical     (uint3 groupID           : SV_GroupID, 
+                         uint groupIndex         : SV_GroupIndex, 
+                         uint3 groupThreadID     : SV_GroupThreadID, 
+                         uint3 dispatchThreadId  : SV_DispatchThreadID)
+{
+    uint2 uv = dispatchThreadId.xy;
+   
     float3 col = 0;
+    uint index = 0;
+    int loopCount = (blurRadius - 1) * 0.5f;
+
+ /*   [unroll(9)]
+    for (int j = -loopCount; j <= loopCount; j++) 
+    {
+        int offset = j * 2;   
+        col +=  Source[uv + int2(0, offset)] * Weights[index];
+        index++;
+    }*/
+
+    Output_Vertical[dispatchThreadId.xy] = Source[uv];
+}
+
+
+
+
+
+  /*float3 col = 0;
     uint index = 0;
     int loopCount = (blurRadius - 1) * 0.5f;
 
@@ -49,89 +105,20 @@ void CSBlurHorizontal   (uint3 groupID           : SV_GroupID,
          col += Source[sourceUV] * Weights[index];
         index++;
     }
-
-
-          //  sourceUV.x = clamp(sourceUV.x, 0, sourceSize.x - 1);
-      
-    /*
-      int clamedDisX = min(dispatchThreadId.x, Source.Length.x - 1);  
-    int clamedDisY = min(dispatchThreadId.y, Source.Length.y - 1);
-    if (groupThreadID.x < loopCount)  
-    {
-        int x = max(clamedDisX - loopCount, 0);    
-        uint2 clampedPos = uint2(x, clamedDisY);   
-        col = Source[clampedPos]; 
-
-    }
-    else if (groupThreadID.x >= threadCount - loopCount) 
-    {
-        int x = min(clamedDisX + loopCount, Source.Length.x - 1); 
-        uint2 clampedPos = uint2(x, clamedDisY);    
-        col = Source[clampedPos];
-
-    }*/
+    Output_Horizontal[dispatchThreadId.xy] = col; */
     
+   /* int2 sourceUV = dispatchThreadId.xy;
+    sourceUV.x = min(sourceUV.x, sourceSize.x -1);
+    sourceUV.y = min(sourceUV.y, sourceSize.y -1);
 
-    Output_Horizontal[dispatchThreadId.xy] = col;
-    
-
-   /*   int loopCount = (blurRadius - 1) * 0.5f;
-
-     int clamedDisX = min(dispatchThreadId.x, Source.Length.x - 1);  
-    int clamedDisY = min(dispatchThreadId.y, Source.Length.y - 1);
-    if (groupThreadID.x < loopCount)  
-    {
-        int x = max(clamedDisX - loopCount, 0);    
-        uint2 clampedPos = uint2(x, clamedDisY);   
-        gCache[groupThreadID.x] = Source[clampedPos]; 
-
-    }
-    else if (groupThreadID.x >= threadCount - loopCount) 
-    {
-        int x = min(clamedDisX + loopCount, Source.Length.x - 1); 
-        uint2 clampedPos = uint2(x, clamedDisY);    
-        gCache[groupThreadID.x + 2 * loopCount] = Source[clampedPos];
-
-    }
-
-    uint2 clampedPos = uint2(clamedDisX, clamedDisY);
-    gCache[groupThreadID.x + loopCount] = Source[clampedPos];
-
-    GroupMemoryBarrierWithGroupSync();
-    float3 blurColor = float3(0.0f, 0.0f, 0.0f);
-
-    [unroll(9)]
-   
-    for (int i = -loopCount; i <= loopCount; i++)
-    {
-        int k = groupThreadID.x + loopCount + i;
-        blurColor += gCache[k] * Weights[i + loopCount];
-
-    }
-    Output_Horizontal[uint2(dispatchThreadId.x, dispatchThreadId.y)] = blurColor;*/
-
-
-}
-
-
-[numthreads(1,threadCount,1)]
-void CSBlurVertical     (uint3 groupID           : SV_GroupID, 
-                         uint groupIndex         : SV_GroupIndex, 
-                         uint3 groupThreadID     : SV_GroupThreadID, 
-                         uint3 dispatchThreadId  : SV_DispatchThreadID)
-{
-    uint2 uv = dispatchThreadId.xy;
-   
-    float3 col = 0;
-    uint index = 0;
     int loopCount = (blurRadius - 1) * 0.5f;
-
-    [unroll(9)]
-    for (int j = -loopCount; j <= loopCount; j++) 
+    if (groupThreadID.x < loopCount)  
     {
-        int offset = j * 2;   
-        col +=  Source[uv + int2(0, offset)] * Weights[index];
-        index++;
+        int x = max(sourceUV.x - loopCount, 0);    
+        sourceUV = int2(x, sourceUV.y);   
     }
-    Output_Vertical[dispatchThreadId.xy] = col;
-}
+    else if (groupThreadID.x >= threadCount - loopCount) 
+    {
+        int x = min(sourceUV.x + loopCount, sourceSize.x - 1); 
+        sourceUV = int2(x,  sourceUV.y);    
+    }*/
