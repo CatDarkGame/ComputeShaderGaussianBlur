@@ -39,6 +39,7 @@ public class GaussianblurRenderPass : ScriptableRenderPass
         RenderTextureDescriptor descriptor = new RenderTextureDescriptor(cameraData.camera.scaledPixelWidth, cameraData.camera.scaledPixelHeight);
         cmd.GetTemporaryRT(PROPERTY_TEMPBUFFER_1, descriptor, FilterMode.Bilinear);
         cmd.GetTemporaryRT(PROPERTY_TEMPBUFFER_2, descriptor, FilterMode.Bilinear);
+
         
         // 2 Pass 가우스안블러 렌더링
         cmd.Blit(_destination, _tempBuffer_1, _material, 0);    // Horizontal

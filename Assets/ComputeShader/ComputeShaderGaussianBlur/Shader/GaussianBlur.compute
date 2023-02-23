@@ -1,80 +1,90 @@
 #pragma kernel CSBlurHorizontal
 #pragma kernel CSBlurVertical
 
-#define threadCount 9 
-#define Radius 9
+#define DEF_ThreadCount 256 
+#define DEF_BlurSigma 9
 
-Texture2D<float3> Source;
-RWTexture2D<float3> Output_Horizontal;
-RWTexture2D<float3> Output_Vertical;
+#define CacheSize DEF_ThreadCount + DEF_BlurSigma
+groupshared float3 _gsCache[CacheSize];
 
-StructuredBuffer<unorm float> Weights;
-int blurRadius;
+Texture2D<float3>   _Source;
+RWTexture2D<float3> _Output_Horizontal;
+RWTexture2D<float3> _Output_Vertical;
 
-#define CacheSize (threadCount + Radius)
-groupshared float3 gCache[CacheSize];
+StructuredBuffer<unorm float> _Weights;//This
 
 
-[numthreads(threadCount,1,1)]
+[numthreads(DEF_ThreadCount,1,1)]
 void CSBlurHorizontal   (uint3 groupID           : SV_GroupID, 
                          uint groupIndex         : SV_GroupIndex, 
                          uint3 groupThreadID     : SV_GroupThreadID, 
                          uint3 dispatchThreadId  : SV_DispatchThreadID)
 {
-    uint2 uv = dispatchThreadId.xy;
     uint2 sourceSize;
-    Source.GetDimensions(sourceSize.x, sourceSize.y);
-   
-    int loopCount = (blurRadius - 1) * 0.5f;
+    _Source.GetDimensions(sourceSize.x, sourceSize.y);
     int2 sourceUV = dispatchThreadId.xy;
     sourceUV.x = min(sourceUV.x, sourceSize.x -1);
     sourceUV.y = min(sourceUV.y, sourceSize.y -1);
-    gCache[groupThreadID.x + loopCount] = Source[sourceUV];
-    if (groupThreadID.x < (uint)loopCount) 
+
+    int blurRadius = (DEF_BlurSigma - 1) * 0.5f;
+    _gsCache[groupThreadID.x + blurRadius] = _Source[sourceUV];
+    if (groupThreadID.x < (uint)blurRadius) 
     {
-        sourceUV.x = max(sourceUV.x - loopCount, 0);    
-        gCache[groupThreadID.x] = Source[sourceUV]; 
+        sourceUV.x = max(sourceUV.x - blurRadius, 0);    
+        _gsCache[groupThreadID.x] = _Source[sourceUV]; 
     }
-    else if (groupThreadID.x >= threadCount - (uint)loopCount) 
+    else if (groupThreadID.x >= DEF_ThreadCount - (uint)blurRadius) 
     {
-        sourceUV.x = min(sourceUV.x + loopCount, sourceSize.x - 1); 
-        gCache[groupThreadID.x + 2 * loopCount] = Source[sourceUV];
+        sourceUV.x = min(sourceUV.x + blurRadius, sourceSize.x - 1); 
+        _gsCache[groupThreadID.x + 2 * blurRadius] = _Source[sourceUV];
     }
 
-    GroupMemoryBarrierWithGroupSync();  // Wait for all thraed end of line upper code
+    GroupMemoryBarrierWithGroupSync(); 
 
     float3 col = 0.0f;
-
-    [unroll(9)]
-    for (int i = 0; i < 9; i++)
+    [unroll(DEF_BlurSigma)]
+    for (int i = 0; i < DEF_BlurSigma; i++)
     {
-        col += gCache[groupThreadID.x + i] * Weights[i];
+        col += _gsCache[groupThreadID.x + i] * _Weights[i];
     }
-    Output_Horizontal[uint2(dispatchThreadId.x, dispatchThreadId.y)] = col;
+    _Output_Horizontal[uint2(dispatchThreadId.x, dispatchThreadId.y)] = col;
 }
 
 
-[numthreads(1,threadCount,1)]
+[numthreads(1,DEF_ThreadCount,1)]
 void CSBlurVertical     (uint3 groupID           : SV_GroupID, 
                          uint groupIndex         : SV_GroupIndex, 
                          uint3 groupThreadID     : SV_GroupThreadID, 
                          uint3 dispatchThreadId  : SV_DispatchThreadID)
 {
-    uint2 uv = dispatchThreadId.xy;
-   
-    float3 col = 0;
-    uint index = 0;
-    int loopCount = (blurRadius - 1) * 0.5f;
+    uint2 sourceSize;
+    _Source.GetDimensions(sourceSize.x, sourceSize.y);
+    int2 sourceUV = dispatchThreadId.xy;
+    sourceUV.x = min(sourceUV.x, sourceSize.x -1);
+    sourceUV.y = min(sourceUV.y, sourceSize.y -1);
 
- /*   [unroll(9)]
-    for (int j = -loopCount; j <= loopCount; j++) 
+     int blurRadius = (DEF_BlurSigma - 1) * 0.5f;
+    _gsCache[groupThreadID.y + blurRadius] = _Source[sourceUV];
+    if (groupThreadID.y < (uint)blurRadius) 
     {
-        int offset = j * 2;   
-        col +=  Source[uv + int2(0, offset)] * Weights[index];
-        index++;
-    }*/
+        sourceUV.y = max(sourceUV.y - blurRadius, 0);    
+        _gsCache[groupThreadID.y] = _Source[sourceUV]; 
+    }
+    else if (groupThreadID.y >= DEF_ThreadCount - (uint)blurRadius) 
+    {
+        sourceUV.y = min(sourceUV.y + blurRadius, sourceSize.y - 1); 
+        _gsCache[groupThreadID.y + 2 * blurRadius] = _Source[sourceUV];
+    }
 
-    Output_Vertical[dispatchThreadId.xy] = Source[uv];
+    GroupMemoryBarrierWithGroupSync(); 
+
+    float3 col = 0.0f;
+    [unroll(DEF_BlurSigma)]
+    for (int i = 0; i < DEF_BlurSigma; i++)
+    {
+        col += _gsCache[groupThreadID.y + i] * _Weights[i];
+    }
+    _Output_Vertical[uint2(dispatchThreadId.x, dispatchThreadId.y)] = col;
 }
 
 

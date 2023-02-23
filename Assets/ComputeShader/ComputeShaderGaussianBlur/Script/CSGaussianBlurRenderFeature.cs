@@ -9,7 +9,8 @@ public class CSGaussianBlurRenderFeature : ScriptableRendererFeature
 {
     public RenderPassEvent passEvent = RenderPassEvent.BeforeRenderingPostProcessing;
     public ComputeShader computeShader;
-    [Range(1, 8)] public int blurStep = 8;
+    [Range(0, 8)] public int blurStep = 8;
+    [Range(1, 4)] public int downSampling = 1;
 
     private CSGaussianBlurRenderPass _renderPass;
     
@@ -17,7 +18,7 @@ public class CSGaussianBlurRenderFeature : ScriptableRendererFeature
     {
         if (!computeShader) return;
         _renderPass = new CSGaussianBlurRenderPass(passEvent);
-        _renderPass.SetupComputeShader(computeShader, blurStep);
+        _renderPass.SetupComputeShader(computeShader, blurStep, downSampling);
     }
     
     protected override void Dispose(bool disposing)

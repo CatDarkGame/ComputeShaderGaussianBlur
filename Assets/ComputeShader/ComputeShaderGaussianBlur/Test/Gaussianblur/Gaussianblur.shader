@@ -28,7 +28,7 @@ Shader "Hidden/CustomRenderFeature/Gaussianblur"
         		0.19459459, 0.12162162, 0.05405405, 0.01621622
         	};
         	for (int j = 0; j < 9; j++) {
-        		float offset = offsets[j] * 2.0 * _MainTex_TexelSize.x;
+        		float offset = offsets[j] * 1.0 * _MainTex_TexelSize.x;
         		col += tex2D(_MainTex, i.uv + float2(offset, 0.0f)) * weights[j];
         	}
         	
@@ -48,7 +48,7 @@ Shader "Hidden/CustomRenderFeature/Gaussianblur"
         	};
         	for (int j = 0; j < 9; j++) 
         	{
-        		float offset = offsets[j] * _MainTex_TexelSize.y;
+        		float offset = offsets[j]  * 1.0 *  _MainTex_TexelSize.y;
         		col += tex2D(_MainTex, i.uv + float2(0.0f, offset)) * weights[j];
         	}
         	return float4(col.rgb, 1.0);
