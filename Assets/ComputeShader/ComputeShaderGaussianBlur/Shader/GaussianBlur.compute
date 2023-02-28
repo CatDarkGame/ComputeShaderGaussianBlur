@@ -47,6 +47,7 @@ void CSBlurHorizontal   (uint3 groupID           : SV_GroupID,
     {
         col += _gsCache[groupThreadID.x + i] * _Weights[i];
     }
+   
     _Output_Horizontal[uint2(dispatchThreadId.x, dispatchThreadId.y)] = col;
 }
 
@@ -56,7 +57,7 @@ void CSBlurVertical     (uint3 groupID           : SV_GroupID,
                          uint groupIndex         : SV_GroupIndex, 
                          uint3 groupThreadID     : SV_GroupThreadID, 
                          uint3 dispatchThreadId  : SV_DispatchThreadID)
-{
+{ 
     uint2 sourceSize;
     _Source.GetDimensions(sourceSize.x, sourceSize.y);
     int2 sourceUV = dispatchThreadId.xy;
@@ -84,6 +85,7 @@ void CSBlurVertical     (uint3 groupID           : SV_GroupID,
     {
         col += _gsCache[groupThreadID.y + i] * _Weights[i];
     }
+    
     _Output_Vertical[uint2(dispatchThreadId.x, dispatchThreadId.y)] = col;
 }
 

@@ -34,44 +34,6 @@ public class CSGaussianBlurRenderPass : ScriptableRenderPass
     public CSGaussianBlurRenderPass(RenderPassEvent renderPassEvent)
     {
         this.renderPassEvent = renderPassEvent;
-
-        float a = 0.0f;
-        for(int i=0;i<BlurWeight.Length;i++)
-        {
-            a += BlurWeight[i];
-        }
-       // Debug.Log(a);
-
-        float b = 0.0f;
-        float[] abcd = OneDimensinalKernel(4, 3);
-        for (int i = 0; i < abcd.Length; i++)
-        {
-            b += abcd[i];
-        }
-      //  Debug.Log(b);
-        BlurWeight = abcd;
-    }
-
-    float[] OneDimensinalKernel(int radius, float sigma)
-    {
-        float[] kernelResult = new float[radius * 2 + 1];
-        float sum = 0.0f;
-        for (int t = 0; t < radius; t++)
-        {
-            double newBlurWalue = 0.39894 * Mathf.Exp(-0.5f * t * t / (sigma * sigma)) / sigma;
-            kernelResult[radius + t] = (float)newBlurWalue;
-            kernelResult[radius - t] = (float)newBlurWalue;
-            if (t != 0)
-                sum += (float)newBlurWalue * 2.0f;
-            else
-                sum += (float)newBlurWalue;
-        }
-        // normalize kernels
-        for (int k = 0; k < radius * 2 + 1; k++)
-        {
-            kernelResult[k] /= sum;
-        }
-        return kernelResult;
     }
 
     public void Setup(RenderTargetIdentifier renderTargetDestination)
@@ -92,8 +54,8 @@ public class CSGaussianBlurRenderPass : ScriptableRenderPass
         UnityEditor.AssemblyReloadEvents.beforeAssemblyReload += ClearBuffer;
 #endif
 
-        float[] abcd = OneDimensinalKernel(4, 3);
-        _weightBuffer.SetData(abcd);
+      
+        _weightBuffer.SetData(BlurWeight);
 
         _computeShader.SetBuffer(_kernelIndex_Horizontal, "_Weights", _weightBuffer);
         _computeShader.SetBuffer(_kernelIndex_Vertical, "_Weights", _weightBuffer);
@@ -111,10 +73,12 @@ public class CSGaussianBlurRenderPass : ScriptableRenderPass
         if (_blurStep == 0) return;
 
         CommandBuffer cmd = CommandBufferPool.Get(PASS_TAG);
-        CameraData cameraData = renderingData.cameraData;
-        RenderTextureDescriptor descriptor = new RenderTextureDescriptor(cameraData.camera.scaledPixelWidth / _downSampling, cameraData.camera.scaledPixelHeight / _downSampling);
-        // descriptor.colorFormat = RenderTextureFormat.RGB111110Float;
-     //   descriptor.graphicsFormat = UnityEngine.Experimental.Rendering.GraphicsFormat.B10G11R11_UFloatPack32;
+        RenderTextureDescriptor descriptor = renderingData.cameraData.cameraTargetDescriptor;
+        descriptor.sRGB = false;
+        descriptor.colorFormat = RenderTextureFormat.ARGB32;
+        descriptor.depthBufferBits = 0;
+        descriptor.width /= _downSampling;
+        descriptor.height /= _downSampling;
         descriptor.useMipMap = false;
         descriptor.enableRandomWrite = true;
 
@@ -147,7 +111,6 @@ public class CSGaussianBlurRenderPass : ScriptableRenderPass
             cmd.DispatchCompute(_computeShader, _kernelIndex_Vertical, descriptor.width, threadGroupsY, 1);
         }
 
-        //  cmd.Blit(_tempBuffer_2, _destination);
         cmd.Blit(_tempBuffer_1, _destination);
         context.ExecuteCommandBuffer(cmd);
         CommandBufferPool.Release(cmd);

@@ -79,7 +79,7 @@ MonoBehaviour:
   - {fileID: 5558062891327296402}
   - {fileID: -5205888504310658214}
   m_RendererFeatureMap: adc0de57c6d2eee55b382773ca184cc49213d874c034224d5a0b46c0fcf7c0b7
-  m_UseNativeRenderPass: 0
+  m_UseNativeRenderPass: 1
   postProcessData: {fileID: 11400000, guid: 41439944d30ece34e96484bdb6645b55, type: 2}
   xrSystemData: {fileID: 11400000, guid: 60e1133243b97e347b653163a8c01b64, type: 2}
   shaders:
@@ -113,7 +113,7 @@ MonoBehaviour:
     zFailOperation: 0
   m_ShadowTransparentReceive: 1
   m_RenderingMode: 0
-  m_DepthPrimingMode: 0
+  m_DepthPrimingMode: 2
   m_AccurateGbufferNormals: 0
   m_ClusteredRendering: 0
   m_TileSize: 32
@@ -130,6 +130,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1c27d3dd7484e834db13678cf3fc1e4d, type: 3}
   m_Name: GaussianblurRenderFeature
   m_EditorClassIdentifier: 
-  m_Active: 0
+  m_Active: 1
   passEvent: 550
   blurStep: 8
