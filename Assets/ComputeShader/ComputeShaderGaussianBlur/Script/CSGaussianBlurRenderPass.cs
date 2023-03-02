@@ -41,6 +41,13 @@ public class CSGaussianBlurRenderPass : ScriptableRenderPass
         _destination = renderTargetDestination;
     }
 
+    public void Dispose()
+    {
+        if(_weightBuffer!=null) _weightBuffer.Release();
+        _weightBuffer = null;
+    }
+
+
     public void SetupComputeShader(ComputeShader computeShader, int blurStep, int downSampling)
     {
         _blurStep = blurStep;
@@ -73,18 +80,19 @@ public class CSGaussianBlurRenderPass : ScriptableRenderPass
         if (_blurStep == 0) return;
 
         CommandBuffer cmd = CommandBufferPool.Get(PASS_TAG);
-        RenderTextureDescriptor descriptor = renderingData.cameraData.cameraTargetDescriptor;
+        CameraData cameraData = renderingData.cameraData;
+        RenderTextureDescriptor descriptor = new RenderTextureDescriptor(cameraData.camera.scaledPixelWidth, cameraData.camera.scaledPixelHeight);
         descriptor.sRGB = false;
-        descriptor.colorFormat = RenderTextureFormat.ARGB32;
         descriptor.depthBufferBits = 0;
         descriptor.width /= _downSampling;
         descriptor.height /= _downSampling;
         descriptor.useMipMap = false;
         descriptor.enableRandomWrite = true;
+        
 
-      
-        cmd.GetTemporaryRT(PROPERTY_TEMPBUFFER_1, descriptor, FilterMode.Bilinear);
-        cmd.GetTemporaryRT(PROPERTY_TEMPBUFFER_2, descriptor, FilterMode.Bilinear);
+
+        cmd.GetTemporaryRT(PROPERTY_TEMPBUFFER_1, descriptor, FilterMode.Point);
+        cmd.GetTemporaryRT(PROPERTY_TEMPBUFFER_2, descriptor, FilterMode.Point);
 
         cmd.Blit(_destination, _tempBuffer_1);
 

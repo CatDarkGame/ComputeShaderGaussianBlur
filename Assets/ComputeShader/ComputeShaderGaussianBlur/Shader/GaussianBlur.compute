@@ -5,11 +5,11 @@
 #define DEF_BlurSigma 9
 
 #define CacheSize DEF_ThreadCount + DEF_BlurSigma
-groupshared float3 _gsCache[CacheSize];
+groupshared float4 _gsCache[CacheSize];
 
-Texture2D<float3>   _Source;
-RWTexture2D<float3> _Output_Horizontal;
-RWTexture2D<float3> _Output_Vertical;
+Texture2D<float4>   _Source;
+RWTexture2D<float4> _Output_Horizontal;
+RWTexture2D<float4> _Output_Vertical;
 
 StructuredBuffer<unorm float> _Weights;//This
 
@@ -41,7 +41,7 @@ void CSBlurHorizontal   (uint3 groupID           : SV_GroupID,
 
     GroupMemoryBarrierWithGroupSync(); 
 
-    float3 col = 0.0f;
+    float4 col = 0.0f;
     [unroll(DEF_BlurSigma)]
     for (int i = 0; i < DEF_BlurSigma; i++)
     {
@@ -79,7 +79,7 @@ void CSBlurVertical     (uint3 groupID           : SV_GroupID,
 
     GroupMemoryBarrierWithGroupSync(); 
 
-    float3 col = 0.0f;
+    float4 col = 0.0f;
     [unroll(DEF_BlurSigma)]
     for (int i = 0; i < DEF_BlurSigma; i++)
     {
@@ -92,45 +92,3 @@ void CSBlurVertical     (uint3 groupID           : SV_GroupID,
 
 
 
-
-  /*float3 col = 0;
-    uint index = 0;
-    int loopCount = (blurRadius - 1) * 0.5f;
-
-    [unroll(9)]
-    for (int j = -loopCount; j <= loopCount; j++) 
-    {
-        int offset = j * 1;   
-        int2 sourceUV = dispatchThreadId.xy + int2(offset, 0);
-
-        if (groupThreadID.x < loopCount)  
-        {
-            int x = max(sourceUV.x - loopCount, 0);    
-            sourceUV = int2(x, sourceUV.y);   
-        }
-        else if (groupThreadID.x >= threadCount - loopCount) 
-        {
-            int x = min(sourceUV.x + loopCount, sourceSize.x - 1); 
-            sourceUV = int2(x,  sourceUV.y);    
-        }
-
-         col += Source[sourceUV] * Weights[index];
-        index++;
-    }
-    Output_Horizontal[dispatchThreadId.xy] = col; */
-    
-   /* int2 sourceUV = dispatchThreadId.xy;
-    sourceUV.x = min(sourceUV.x, sourceSize.x -1);
-    sourceUV.y = min(sourceUV.y, sourceSize.y -1);
-
-    int loopCount = (blurRadius - 1) * 0.5f;
-    if (groupThreadID.x < loopCount)  
-    {
-        int x = max(sourceUV.x - loopCount, 0);    
-        sourceUV = int2(x, sourceUV.y);   
-    }
-    else if (groupThreadID.x >= threadCount - loopCount) 
-    {
-        int x = min(sourceUV.x + loopCount, sourceSize.x - 1); 
-        sourceUV = int2(x,  sourceUV.y);    
-    }*/

@@ -24,6 +24,7 @@ public class CSGaussianBlurRenderFeature : ScriptableRendererFeature
     protected override void Dispose(bool disposing)
     {
         if (!disposing) return;
+        _renderPass.Dispose();
     }
 
     public override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData)
